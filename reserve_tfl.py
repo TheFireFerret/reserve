@@ -13,21 +13,24 @@ ENABLE_LOGIN = False
 TOCK_USERNAME = "SET_YOUR_USER_NAME_HERE"
 TOCK_PASSWORD = "SET_YOUR_PASSWORD_HERE"
 
+# Set the Tock restaurant URL. Must follow format "https://www.exploretock.com/tfl/"
+TOCK_URL = 'https://www.exploretock.com/taneda/'
+
 # Set your specific reservation month and days
-RESERVATION_MONTH = 'November'
-RESERVATION_DAYS = ['23', '24', '25']
-RESERVATION_YEAR = '2021'
+RESERVATION_MONTH = 'August'
+RESERVATION_DAYS = ['4', '5']
+RESERVATION_YEAR = '2022'
 RESERVATION_TIME_FORMAT = "%I:%M %p"
 
 # Set the time range for acceptable reservation times.
 # I.e., any available slots between 5:00 PM and 8:30 PM
-EARLIEST_TIME = "3:00 PM"
-LATEST_TIME = "8:30 PM"
+EARLIEST_TIME = "5:00 PM"
+LATEST_TIME = "10:00 PM"
 RESERVATION_TIME_MIN = datetime.strptime(EARLIEST_TIME, RESERVATION_TIME_FORMAT)
 RESERVATION_TIME_MAX = datetime.strptime(LATEST_TIME, RESERVATION_TIME_FORMAT)
 
 # Set the party size for the reservation
-RESERVATION_SIZE = 4
+RESERVATION_SIZE = 2
 
 # Multithreading configurations
 NUM_THREADS = 1
@@ -36,7 +39,7 @@ RESERVATION_FOUND = False
 
 # Time between each page refresh in milliseconds. Decrease this time to
 # increase the number of reservation attempts
-REFRESH_DELAY_MSEC = 500
+REFRESH_DELAY_MSEC = 300
 
 # Chrome extension configurations that are used with Luminati.io proxy.
 # Enable proxy to avoid getting IP potentially banned. This should be enabled only if the REFRESH_DELAY_MSEC
@@ -54,30 +57,31 @@ BROWSER_CLOSE_DELAY_SEC = 600
 WEBDRIVER_TIMEOUT_DELAY_MS = 3000
 
 MONTH_NUM = {
-    'january':   1,
-    'february':  2,
-    'march':     3,
-    'april':     4,
-    'may':       5,
-    'june':      6,
-    'july':      7,
-    'august':    8,
-    'september': 9,
-    'october':   10,
-    'november':  11,
-    'december':  12
+    'january':   '01',
+    'february':  '02',
+    'march':     '03',
+    'april':     '04',
+    'may':       '05',
+    'june':      '06',
+    'july':      '07',
+    'august':    '08',
+    'september': '09',
+    'october':   '10',
+    'november':  '11',
+    'december':  '12'
 }
 
 
 class ReserveTFL():
     def __init__(self):
         options = Options()
+        options.add_argument('/mnt/c/Users/samig/Downloads/chromedriver.exe')
         if ENABLE_PROXY:
             options.add_argument('--load-extension={}'.format(EXTENSION_PATH))
             options.add_argument('--user-data-dir={}'.format(USER_DATA_DIR))
             options.add_argument('--profile-directory=Default')
 
-        self.driver = webdriver.Chrome(options=options)
+        self.driver = webdriver.Chrome('/mnt/c/Users/samig/Downloads/chromedriver.exe')
 
     def teardown(self):
         self.driver.quit()
@@ -91,7 +95,7 @@ class ReserveTFL():
 
         while not RESERVATION_FOUND:
             time.sleep(REFRESH_DELAY_MSEC / 1000)
-            self.driver.get("https://www.exploretock.com/tfl/search?date=%s-%s-02&size=%s&time=%s" % (RESERVATION_YEAR, month_num(RESERVATION_MONTH), RESERVATION_SIZE, "22%3A00"))
+            self.driver.get("%ssearch?date=%s-%s-02&size=%s&time=%s" % (TOCK_URL, RESERVATION_YEAR, month_num(RESERVATION_MONTH), RESERVATION_SIZE, "22%3A00"))
             WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "div.ConsumerCalendar-month")))
 
             if not self.search_month():
@@ -105,7 +109,7 @@ class ReserveTFL():
             time.sleep(BROWSER_CLOSE_DELAY_SEC)
 
     def login_tock(self):
-        self.driver.get("https://www.exploretock.com/tfl/login")
+        self.driver.get("%slogin" % (TOCK_URL))
         WebDriverWait(self.driver, WEBDRIVER_TIMEOUT_DELAY_MS).until(expected_conditions.presence_of_element_located((By.NAME, "email")))
         self.driver.find_element(By.NAME, "email").send_keys(TOCK_USERNAME)
         self.driver.find_element(By.NAME, "password").send_keys(TOCK_PASSWORD)
